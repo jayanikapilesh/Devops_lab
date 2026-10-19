@@ -1,0 +1,342 @@
+# Exercise 4: Docker Networking with Multiple Containers
+
+## Objective
+
+Understand Docker networking concepts and configure a multi-container application.
+
+## Scenario
+
+Develop a web application with three containers:
+
+- **Container 1:** Python Flask web server
+- **Container 2:** MySQL database
+- **Container 3:** Redis cache
+
+## Technologies Used
+
+- Docker Desktop
+- Docker Bridge Networking
+- Python 3.9
+- Flask
+- MySQL
+- Redis
+- PowerShell
+
+## Task 1: Create a Bridge Network
+
+Created a custom bridge network named `my-bridge-net`.
+
+**Command:**
+
+```powershell
+docker network create --driver bridge my-bridge-net
+```
+
+The network was created successfully.
+
+## Task 2: Verify the Network
+
+**Command:**
+
+```powershell
+docker network ls
+```
+
+The output confirmed that `my-bridge-net` existed and used the `bridge` driver.
+
+![Docker network list](screenshots/01-network-list.png)
+
+## Task 3: Inspect the Network
+
+**Command:**
+
+```powershell
+docker network inspect my-bridge-net
+```
+
+The network inspection showed the following configuration:
+
+- Network name: `my-bridge-net`
+- Driver: `bridge`
+- Subnet: `172.19.0.0/16`
+- Gateway: `172.19.0.1`
+
+The Flask, MySQL, and Redis containers were connected to this network during testing.
+
+![Docker network inspection](screenshots/02-network-inspect.png)
+
+## Task 4: Launch Containers
+
+### Step 1: Create the Flask Application
+
+The Flask application was saved in `app.py`.
+
+```python
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.route('/about', methods=['GET'])
+def about():
+    return jsonify({
+        "name": "Simple REST API",
+        "version": "1.0",
+        "description": "This is a simple REST API built with Flask."
+    })
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001)
+```
+
+The application provides a GET endpoint at `/about`.
+
+### Step 2: Create requirements.txt
+
+The required Python packages were listed in `requirements.txt`.
+
+```text
+Flask==2.0.1
+Werkzeug==2.0.3
+```
+
+### Step 3: Create the Dockerfile
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+COPY app.py .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 5001
+
+CMD ["python", "app.py"]
+```
+
+### Step 4: Build the Flask Docker Image
+
+**Command:**
+
+```powershell
+docker build -t flask-api .
+```
+
+The Docker image was built successfully.
+
+![Flask Docker image](screenshots/09-flask-docker-image.png)
+
+### Step 5: Launch the MySQL Container
+
+**Command:**
+
+```powershell
+docker run -d --name mysql --network my-bridge-net -e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=devopsdb mysql:latest
+```
+
+This command starts the MySQL container on the custom bridge network, sets the root password, and creates the `devopsdb` database.
+
+### Step 6: Launch the Redis Container
+
+**Command:**
+
+```powershell
+docker run -d --name redis --network my-bridge-net redis:latest
+```
+
+This command starts Redis and connects it to `my-bridge-net`.
+
+### Step 7: Launch the Flask Container
+
+**Command:**
+
+```powershell
+docker run -d --name flask --network my-bridge-net -p 5001:5001 flask-api
+```
+
+The Flask container was connected to the same network. Port `5001` was published to the host machine.
+
+### Step 8: Verify Running Containers
+
+**Command:**
+
+```powershell
+docker ps
+```
+
+The output confirmed that Flask, MySQL, and Redis were running.
+
+![Running Docker containers](screenshots/03-containers-running.png)
+
+### Step 9: Test the Flask REST API
+
+**Command:**
+
+```powershell
+curl.exe http://localhost:5001/about
+```
+
+The API returned the following JSON response:
+
+```json
+{
+  "description": "This is a simple REST API built with Flask.",
+  "name": "Simple REST API",
+  "version": "1.0"
+}
+```
+
+![Flask API response](screenshots/04-flask-api-response.png)
+
+## Task 5: Test Connectivity
+
+### Step 1: Verify MySQL
+
+**Command:**
+
+```powershell
+docker exec -it mysql mysql -uroot -prootpass -e "SHOW DATABASES;"
+```
+
+The output confirmed that `devopsdb` existed, along with MySQL's default databases.
+
+![MySQL databases](screenshots/05-mysql-databases.png)
+
+### Step 2: Verify Redis
+
+**Command:**
+
+```powershell
+docker exec -it redis redis-cli ping
+```
+
+**Output:**
+
+```text
+PONG
+```
+
+The `PONG` response confirmed that the Redis server was responding.
+
+![Redis connectivity test](screenshots/06-redis-pong.png)
+
+### Step 3: Test MySQL Name Resolution
+
+**Command:**
+
+```powershell
+docker exec flask getent hosts mysql
+```
+
+**Output:**
+
+```text
+172.19.0.2    mysql
+```
+
+This confirmed that the Flask container could resolve the MySQL container using its name.
+
+![MySQL DNS resolution](screenshots/07-dns-mysql.png)
+
+### Step 4: Test Redis Name Resolution
+
+**Command:**
+
+```powershell
+docker exec flask getent hosts redis
+```
+
+**Output:**
+
+```text
+172.19.0.3    redis
+```
+
+This confirmed that the Flask container could resolve the Redis container using its name.
+
+![Redis DNS resolution](screenshots/08-dns-redis.png)
+
+### Step 5: Inspect Network Connectivity
+
+**Command:**
+
+```powershell
+docker network inspect my-bridge-net
+```
+
+The output showed that Flask, MySQL, and Redis were attached to the same custom bridge network and had assigned IP addresses.
+
+![Network containers](screenshots/10-network-containers.png)
+
+## Task 6: Clean Up
+
+After completing the tests, the three Exercise 4 containers were stopped and removed.
+
+### Step 1: Stop the Containers
+
+**Command:**
+
+```powershell
+docker stop mysql redis flask
+```
+
+### Step 2: Remove the Containers
+
+**Command:**
+
+```powershell
+docker rm mysql redis flask
+```
+
+### Step 3: Remove the Custom Network
+
+**Command:**
+
+```powershell
+docker network rm my-bridge-net
+```
+
+The containers and custom network were removed successfully. A subsequent attempt to remove the same network returned a "network not found" error because it had already been deleted.
+
+The final network listing confirmed that `my-bridge-net` was absent while the default Docker networks, Minikube network, and existing project network remained.
+
+![Cleanup verification](screenshots/11-cleanup-network.png)
+
+## Questions and Answers
+
+### 1. What is the purpose of the `--net` flag in `docker run`?
+
+The `--net` flag specifies the network to which a container should connect. The equivalent option used in this exercise is `--network`.
+
+### 2. How do containers communicate with each other on the same network?
+
+Containers on the same user-defined bridge network can communicate using their container names or IP addresses. Docker's built-in DNS resolves container names to their IP addresses.
+
+### 3. What is the difference between a bridge network and a host network?
+
+A **bridge network** provides network isolation for containers and allows containers connected to the same bridge network to communicate.
+
+A **host network** shares the host machine's network stack, so the container does not use a separate isolated network stack.
+
+Think of it this way:
+
+- **Bridge network:** Containers are in a private room, communicating through a door.
+- **Host network:** Containers share the host's room and network.
+
+### 4. How can you expose a container's port to the host machine?
+
+Use the `-p` flag to publish a container port to a host port.
+
+Example:
+
+```powershell
+docker run -d --name flask --network my-bridge-net -p 5001:5001 flask-api
+```
+
+Here, `5001:5001` maps host port `5001` to container port `5001`.
+
+## Result
+
+Successfully created a custom Docker bridge network and connected Flask, MySQL, and Redis containers. Verified the Flask REST API, MySQL database initialization, Redis response, Docker DNS name resolution, and network connectivity. Finally, removed the containers and custom network while preserving unrelated Docker networks and previous project containers.
