@@ -10,7 +10,6 @@ A collection of hands-on DevOps exercises completed as part of the **DevOps** co
 | USN | 1BM23IS114 |
 | Department | Information Science and Engineering (ISE) |
 | Semester | 7th Semester |
-| Faculty | Prof. Sunag P & Sumukha |
 | Course | DevOps |
 
 ## About This Repository
@@ -33,6 +32,20 @@ All exercises were performed on **Windows 11 with Docker Desktop** (PowerShell).
 | 8 | [Creating a "Hello World" Jenkins Job](Exercise-08-Jenkins-Hello-World-Job) | Pushing a shell script to GitHub and running it from a Jenkins Freestyle job. |
 | 9 | [Jenkins Multi-Stage Pipeline](Exercise-09-Jenkins-Multi-Stage-Pipeline) | A Jenkinsfile with Build, Test, Deploy, Run and Test stages for a Flask app, including fixing the missing Python in the Jenkins container. |
 | 10 | [Multi-Node Kubernetes Cluster with Multiple Applications](Exercise-10-Minikube-Multi-Node) | Deploying two Flask microservices across a 3-node Minikube cluster with pod anti-affinity and testing them with curl. |
+
+## Companion Repository
+
+Exercises 8 and 9 need Jenkins to pull code from GitHub, so that code lives in a separate repository:
+
+**[devops-sample-code](https://github.com/jayanikapilesh/devops-sample-code)**
+
+| File | Used in | Purpose |
+|---|---|---|
+| `hello-world.sh` | Exercise 8 | Shell script run by the Jenkins Freestyle job |
+| `app.py` | Exercise 9 | Flask application deployed by the pipeline |
+| `test_app.py` | Exercise 9 | Unit test for the Flask application |
+| `requirements.txt` | Exercise 9 | Python dependencies (Flask) |
+| `Jenkinsfile` | Exercise 9 | Multi-stage pipeline: Build, Test, Deploy, Run Application, Test Application |
 
 ## Tools Used
 
