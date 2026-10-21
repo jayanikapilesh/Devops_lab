@@ -1,4 +1,4 @@
-# Exercise 8: Creating a Hello World Jenkins Job
+# Exercise 8: Creating "Hello World" Jenkins Job
 
 ## Objective
 
@@ -20,7 +20,9 @@ Create a GitHub repository containing a simple shell script, then configure a Je
 
 ---
 
-## Step 1: Create the GitHub Repository
+## Step 1: Create a file (hello-world.sh) in your GitHub account
+
+### (1a) Create a New GitHub Repository
 
 Created a new public GitHub repository with the following details:
 
@@ -32,7 +34,7 @@ Created a new public GitHub repository with the following details:
 
 ![GitHub new repository](screenshots/01-github-new-repo.png)
 
-## Step 1b: Create a Fine-Grained Personal Access Token
+### (1b) Create a Fine-Grained Personal Access Token
 
 Created a fine-grained Personal Access Token (PAT) for committing code to GitHub.
 
@@ -48,7 +50,7 @@ The token value is private and is not included in this documentation.
 
 ![GitHub fine-grained PAT](screenshots/12-github-pat.png)
 
-## Step 2: Create the Hello World Script
+### (2) Create the Script Locally
 
 Created a new folder `devops-sample-code` on the Desktop and created the script `hello-world.sh` inside it.
 
@@ -72,9 +74,7 @@ The file's line endings were set to **LF** in VS Code so the script runs correct
 
 ![Hello world script](screenshots/02-hello-world-script.png)
 
-## Step 3: Initialize Git and Commit
-
-### Verify Git Configuration and Initialize the Repository
+### (3) Initialize a Local Git Repository
 
 **Commands:**
 
@@ -86,7 +86,9 @@ git init
 
 The Git username and email were already configured, so the commands displayed the existing values. `git init` created a new local repository.
 
-### Add the Script and Make It Executable
+### (4) Add the Script to the Repository
+
+#### Add the Script and Make It Executable
 
 **Commands:**
 
@@ -112,7 +114,7 @@ Changes to be committed:
 
 ![Git status](screenshots/03-git-status.png)
 
-### Commit the Changes
+#### Commit the Changes
 
 **Commands:**
 
@@ -133,7 +135,7 @@ The mode `100755` confirms that the script was committed as executable. The bran
 
 ![Git commit](screenshots/04-git-commit.png)
 
-## Step 4: Link the Local Repository to GitHub
+### (5) Link the Local Repository to GitHub
 
 Copied the remote URL of the GitHub repository created in Step 1:
 
@@ -149,7 +151,7 @@ Linked the local repository to the GitHub repository by adding it as the remote 
 git remote add origin https://github.com/jayanikapilesh/devops-sample-code.git
 ```
 
-## Step 4b: Push the Script to GitHub
+### (6) Push the Script to GitHub
 
 Pushed the committed script to the `main` branch of the remote repository.
 
@@ -175,7 +177,7 @@ The `-u` option sets `origin/main` as the upstream branch, so future pushes only
 
 ![Git push](screenshots/05-git-push.png)
 
-## Step 5: Verify the Script on GitHub
+### (7) Verify the Script on GitHub
 
 Opened the repository on GitHub and confirmed that `hello-world.sh` was uploaded with the correct content.
 
@@ -183,16 +185,26 @@ Opened the repository on GitHub and confirmed that `hello-world.sh` was uploaded
 
 ---
 
-## Step 6: Create a Jenkins Freestyle Job
+## Pre-requisite: Ensure Jenkins is running
 
-**Pre-requisite:** Jenkins was already running in Docker from Exercise 7.
+Jenkins was already running in Docker at http://localhost:8080 from Exercise 7 (container `jenkins`, image `jenkins/jenkins:lts`).
 
-1. Opened Jenkins at http://localhost:8080 and logged in.
-2. Clicked **New Item**.
-3. Entered the item name `HelloWorld`.
-4. Selected **Freestyle project** and clicked **OK**.
+---
+
+## Step 1: Access Jenkins
+
+Opened http://localhost:8080 in the browser and logged in with the admin credentials created in Exercise 7.
+
+## Step 2: Create a New Job
+
+1. On the Jenkins dashboard, clicked **New Item**.
+2. Entered the job name `HelloWorld`.
+3. Selected **Freestyle project**.
+4. Clicked **OK**.
 
 ![Jenkins new item](screenshots/07-jenkins-new-item.png)
+
+## Step 3: Configure the Job
 
 ### General Settings
 
@@ -222,9 +234,9 @@ This ensures Jenkins checks out the correct branch, since the script was pushed 
 
 ![Jenkins Git configuration](screenshots/08b-jenkins-git-config.png)
 
-## Step 7: Configure the Build Step
+### Build Steps
 
-Under **Build Steps**, selected **Add build step → Execute shell** and entered:
+Under **Build**, selected **Add build step → Execute shell** and entered:
 
 ```bash
 sh hello-world.sh
@@ -234,17 +246,19 @@ This runs the shell script that Jenkins retrieves from GitHub.
 
 ![Jenkins build step](screenshots/09-jenkins-build-step.png)
 
-## Step 8: Run the Job
+## Step 4: Save and Run the Job
 
-Clicked **Save** to save the job configuration.
+Clicked **Save** to save the job configuration, then clicked **Build Now** on the job page.
 
-**Build Triggers:** The build was triggered manually from **Jenkins Dashboard → HelloWorld → Build Now**. Build **#1** appeared in the build history with a green tick, indicating success.
+### Build Triggers
+
+The build was triggered manually from **Jenkins Dashboard → HelloWorld → Build Now**. Build **#1** appeared in the build history with a green tick, indicating success.
 
 ![Jenkins build now](screenshots/10-jenkins-build-now.png)
 
-## Step 9: View the Build Output
+## Step 5: View the Build Output
 
-Opened **Build #1 → Console Output** to view the build logs.
+Navigated to the **Build History** section on the left-hand side of the job page, clicked build **#1**, then clicked **Console Output** to view the build logs.
 
 **Output:**
 

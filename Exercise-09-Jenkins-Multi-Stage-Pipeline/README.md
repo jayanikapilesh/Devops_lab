@@ -1,4 +1,4 @@
-# Exercise 9: Jenkins Multi-Stage Pipeline – Deploying a Python Application
+# Exercise 9: Jenkins Multi-Stage Pipeline Exercise: Deploying a Python Application
 
 ## Objective
 
@@ -32,7 +32,9 @@ Automate the CI/CD pipeline for a Python Flask application. The pipeline perform
 
 ---
 
-## Step 1: Set Up Jenkins
+## Steps to Complete the Exercise
+
+### Step 1: Set Up Jenkins
 
 Jenkins was already installed and running in Docker at http://localhost:8080 from Exercise 7.
 
@@ -46,9 +48,9 @@ The **Pipeline** plugin (version `608.v67378e9d3db_1`) was already installed and
 
 ---
 
-## Step 2: Create a Sample Python Application
+### Step 2: Create a Sample Python Application
 
-The application was created inside the existing `devops-sample-code` repository folder (created in Exercise 8), next to `hello-world.sh`.
+The lab instructions create a `python-flask-app` directory. However, the Jenkinsfile in Step 5 copies `${WORKSPACE}/app.py` and runs the tests from the workspace root, so the application files must be at the root of the repository. Therefore the files were created directly inside the existing `devops-sample-code` repository folder (created in Exercise 8), next to `hello-world.sh`, which also matches the paths in the expected console output.
 
 **Commands:**
 
@@ -58,7 +60,7 @@ New-Item app.py, requirements.txt, test_app.py
 code .
 ```
 
-### File: app.py
+#### File: app.py
 
 ```python
 from flask import Flask
@@ -73,13 +75,13 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
-### File: requirements.txt
+#### File: requirements.txt
 
 ```text
 flask==2.1.2
 ```
 
-### File: test_app.py
+#### File: test_app.py
 
 ```python
 import unittest
@@ -103,7 +105,7 @@ All files were saved with **LF** line endings so they run correctly inside the L
 
 ---
 
-## Step 3: Push the Application to a Git Repository
+### Step 3: Push the Application to a Git Repository
 
 The local repository was already initialised and linked to GitHub (`git init` and `git remote add origin https://github.com/jayanikapilesh/devops-sample-code.git`) in Exercise 8, so the application files were added, committed and pushed directly.
 
@@ -147,7 +149,7 @@ To https://github.com/jayanikapilesh/devops-sample-code.git
 
 ---
 
-## Step 4: Create a Multistage Jenkins Pipeline
+### Step 4: Create a Multistage Jenkins Pipeline
 
 1. Opened the Jenkins dashboard and clicked **New Item**.
 2. Entered the name `Python-MultiStage-Pipeline`.
@@ -157,7 +159,7 @@ To https://github.com/jayanikapilesh/devops-sample-code.git
 
 ---
 
-## Step 5: Define the Jenkinsfile
+### Step 5: Define the Jenkinsfile
 
 Created a file named `Jenkinsfile` (no extension) in the project directory.
 
@@ -225,7 +227,7 @@ pipeline {
 }
 ```
 
-### Push the Jenkinsfile to the Git Repository
+#### Push the Jenkinsfile to the Git Repository
 
 **Commands:**
 
@@ -256,7 +258,7 @@ To https://github.com/jayanikapilesh/devops-sample-code.git
 
 ---
 
-## Step 6: Configure the Jenkins Job
+### Step 6: Configure the Jenkins Job
 
 In the `Python-MultiStage-Pipeline` configuration page, under the **Pipeline** section:
 
@@ -275,11 +277,11 @@ The configuration was then saved.
 
 ---
 
-## Step 7: Run the Pipeline
+### Step 7: Run the Pipeline
 
 Clicked **Build Now** to start the pipeline and observed the stages as they executed.
 
-### First Run (Build #1) – Failed
+#### First Run (Build #1) – Failed
 
 The first build failed in the **Test** stage because Python was not installed in the Jenkins Docker container.
 
@@ -315,7 +317,7 @@ The **Build** stage and Git checkout succeeded, the **Test** stage failed with `
 
 ---
 
-## Step 8: Handling Build Errors
+### Step 8: Handling build errors
 
 To resolve the missing `python3`, `pip` and other dependencies, logged into the Jenkins Docker container as the root user.
 
@@ -342,7 +344,7 @@ apt install -y python3 python3-pip python3-venv python3-flask
 
 The Jenkins image is based on **Debian 13 (trixie)**, which provides **Python 3.13**. Therefore the current package names were used:
 
-| Package in Sunag's instructions | Package used | Reason |
+| Package in lab instructions | Package used | Reason |
 |---|---|---|
 | `python3` | `python3` | Same |
 | `pip` | `python3-pip` | Debian package name for pip |
@@ -375,7 +377,7 @@ The unit test passed inside the Jenkins container. The container shell was then 
 
 ---
 
-## Second Run (Build #2) – Success
+#### Re-run the Pipeline (Build #2) – Success
 
 Clicked **Build Now** again. All stages completed successfully:
 
@@ -391,7 +393,7 @@ Clicked **Build Now** again. All stages completed successfully:
 
 ![Pipeline stages successful](screenshots/09-pipeline-success.png)
 
-### Console Output (Build #2)
+#### Console Output (Build #2)
 
 ```text
 Started by user Jayani Kapilesh
@@ -493,7 +495,7 @@ Finished: SUCCESS
 
 ---
 
-## Expected Outcome vs Actual Result
+## Expected Outcome
 
 | Stage | Expected | Actual |
 |-------|----------|--------|
@@ -508,7 +510,7 @@ The multi-stage pipeline ran successfully and finished with **`Finished: SUCCESS
 
 ---
 
-## Additional Enhancements (Possible Next Steps)
+## Additional Enhancements
 
 - Add a **Code Quality** stage using `flake8` or `pylint`:
 
