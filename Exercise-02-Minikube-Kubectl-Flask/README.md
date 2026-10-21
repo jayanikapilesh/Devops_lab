@@ -264,3 +264,35 @@ The application was verified through Kubernetes commands, application logs, a te
 This exercise demonstrates the basic workflow for deploying a containerized web application on Kubernetes. It covers Docker image creation, loading a local image into Minikube, configuring Kubernetes resources, exposing the application through a Service, and verifying application accessibility.
 
 The successful response, `Hello from Flask on Kubernetes!`, confirms that the application was deployed and accessed successfully.
+
+## Q&A Based on the Exercise
+
+**Q1: What is the purpose of `minikube service flask-app-service --url`?**
+A1: It provides the URL for accessing the `flask-app-service` running in Minikube.
+
+**Q2: What happens when you run `minikube service flask-app-service --url`?**
+A2: Minikube checks that the service is running, creates a tunnel to it, and prints the URL in the terminal.
+
+**Q3: Why is `targetPort` used in a Kubernetes Service configuration?**
+A3: It specifies the port on which the container is listening, so the Service knows where to forward traffic.
+
+**Q4: What is the difference between `port` and `targetPort` in a Kubernetes Service?**
+A4: `port` is the port exposed by the Service, while `targetPort` is the port of the container that receives the traffic.
+
+**Q5: How do you access a Flask application running in Minikube?**
+A5: Use `minikube service <service-name> --url` to get the access URL, then open it in a browser or call it with curl.
+
+**Q6: Why does the terminal need to remain open when using the Docker driver with Minikube?**
+A6: With the Docker driver, Minikube runs a tunnel to reach the service, and the tunnel only works while that terminal stays open.
+
+**Q7: What is the benefit of using the `--url` flag with the `minikube service` command?**
+A7: It prints the access URL directly instead of opening a browser, which makes it easy to use with curl or copy into a browser.
+
+**Q8: What command is used to expose a service in Kubernetes?**
+A8: `kubectl expose` or `kubectl apply -f <service.yaml>`.
+
+**Q9: How does Minikube help in local Kubernetes testing?**
+A9: Minikube runs a single-node Kubernetes cluster locally, so deployments can be tested without a full Kubernetes environment.
+
+**Q10: What is the role of kubectl in this setup?**
+A10: kubectl is the Kubernetes command-line tool used to interact with the cluster: deploying applications, checking their status, viewing logs, scaling and managing resources.
