@@ -1,4 +1,4 @@
-# Assignment 1: Kubernetes Getting Started — Hello Pod
+# Exercise 1: Kubernetes Getting Started — Hello Pod
 
 ## 1. Aim
 
