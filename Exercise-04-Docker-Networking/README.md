@@ -44,6 +44,8 @@ docker network ls
 
 The output confirmed that `my-bridge-net` existed and used the `bridge` driver.
 
+**Screenshot:**
+
 ![Docker network list](screenshots/01-network-list.png)
 
 ## Task 3: Inspect the Network
@@ -62,6 +64,8 @@ The network inspection showed the following configuration:
 - Gateway: `172.19.0.1`
 
 The Flask, MySQL, and Redis containers were connected to this network during testing.
+
+**Screenshot:**
 
 ![Docker network inspection](screenshots/02-network-inspect.png)
 
@@ -126,6 +130,8 @@ docker build -t flask-api .
 
 The Docker image was built successfully.
 
+**Screenshot:**
+
 ![Flask Docker image](screenshots/09-flask-docker-image.png)
 
 ### Step 5: Launch the MySQL Container
@@ -168,6 +174,8 @@ docker ps
 
 The output confirmed that Flask, MySQL, and Redis were running.
 
+**Screenshot:**
+
 ![Running Docker containers](screenshots/03-containers-running.png)
 
 ### Step 9: Test the Flask REST API
@@ -188,11 +196,81 @@ The API returned the following JSON response:
 }
 ```
 
+**Screenshot:**
+
 ![Flask API response](screenshots/04-flask-api-response.png)
 
 ## Task 5: Test Connectivity
 
-### Step 1: Verify MySQL
+### Step 1: Exec into the Flask Container
+
+**Command:**
+
+```powershell
+docker exec -it flask bash
+```
+
+The `python:3.9-slim` image does not include the `ping` command, so it was installed inside the container first:
+
+```bash
+apt-get update && apt-get install -y iputils-ping
+```
+
+### Step 2: Ping the MySQL Container
+
+**Command:**
+
+```bash
+ping -c 4 mysql
+```
+
+**Output:**
+
+```text
+PING mysql (172.20.0.2) 56(84) bytes of data.
+64 bytes from mysql.my-bridge-net (172.20.0.2): icmp_seq=1 ttl=64 time=2.84 ms
+64 bytes from mysql.my-bridge-net (172.20.0.2): icmp_seq=2 ttl=64 time=0.209 ms
+64 bytes from mysql.my-bridge-net (172.20.0.2): icmp_seq=3 ttl=64 time=0.216 ms
+64 bytes from mysql.my-bridge-net (172.20.0.2): icmp_seq=4 ttl=64 time=0.190 ms
+
+--- mysql ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3034ms
+rtt min/avg/max/mdev = 0.190/0.863/2.840/1.141 ms
+```
+
+### Step 3: Ping the Redis Container
+
+**Command:**
+
+```bash
+ping -c 4 redis
+```
+
+**Output:**
+
+```text
+PING redis (172.20.0.3) 56(84) bytes of data.
+64 bytes from redis.my-bridge-net (172.20.0.3): icmp_seq=1 ttl=64 time=2.02 ms
+64 bytes from redis.my-bridge-net (172.20.0.3): icmp_seq=2 ttl=64 time=0.186 ms
+64 bytes from redis.my-bridge-net (172.20.0.3): icmp_seq=3 ttl=64 time=0.201 ms
+64 bytes from redis.my-bridge-net (172.20.0.3): icmp_seq=4 ttl=64 time=0.268 ms
+
+--- redis ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3028ms
+rtt min/avg/max/mdev = 0.186/0.669/2.024/0.782 ms
+```
+
+The Flask container reached both `mysql` and `redis` by container name with 0% packet loss, confirming that containers on the same user-defined bridge network communicate using Docker's built-in DNS. The container shell was then closed with `exit`.
+
+**Screenshot:**
+
+![Ping MySQL and Redis](screenshots/12-ping-mysql-redis.png)
+
+### Additional Connectivity Checks
+
+These checks were done in an earlier run of this exercise (before the network was recreated for the ping test), so the container IP addresses are in the `172.19.0.0/16` subnet instead of `172.20.0.0/16`.
+
+#### Verify MySQL
 
 **Command:**
 
@@ -202,9 +280,11 @@ docker exec -it mysql mysql -uroot -prootpass -e "SHOW DATABASES;"
 
 The output confirmed that `devopsdb` existed, along with MySQL's default databases.
 
+**Screenshot:**
+
 ![MySQL databases](screenshots/05-mysql-databases.png)
 
-### Step 2: Verify Redis
+#### Verify Redis
 
 **Command:**
 
@@ -220,9 +300,11 @@ PONG
 
 The `PONG` response confirmed that the Redis server was responding.
 
+**Screenshot:**
+
 ![Redis connectivity test](screenshots/06-redis-pong.png)
 
-### Step 3: Test MySQL Name Resolution
+#### Test MySQL Name Resolution
 
 **Command:**
 
@@ -238,9 +320,11 @@ docker exec flask getent hosts mysql
 
 This confirmed that the Flask container could resolve the MySQL container using its name.
 
+**Screenshot:**
+
 ![MySQL DNS resolution](screenshots/07-dns-mysql.png)
 
-### Step 4: Test Redis Name Resolution
+#### Test Redis Name Resolution
 
 **Command:**
 
@@ -256,9 +340,11 @@ docker exec flask getent hosts redis
 
 This confirmed that the Flask container could resolve the Redis container using its name.
 
+**Screenshot:**
+
 ![Redis DNS resolution](screenshots/08-dns-redis.png)
 
-### Step 5: Inspect Network Connectivity
+#### Inspect Network Connectivity
 
 **Command:**
 
@@ -267,6 +353,8 @@ docker network inspect my-bridge-net
 ```
 
 The output showed that Flask, MySQL, and Redis were attached to the same custom bridge network and had assigned IP addresses.
+
+**Screenshot:**
 
 ![Network containers](screenshots/10-network-containers.png)
 
@@ -302,7 +390,20 @@ The containers and custom network were removed successfully. A subsequent attemp
 
 The final network listing confirmed that `my-bridge-net` was absent while the default Docker networks, Minikube network, and existing project network remained.
 
+**Screenshot:**
+
 ![Cleanup verification](screenshots/11-cleanup-network.png)
+
+## Differences from the Lab Instructions
+
+| Lab instruction | What was done | Reason |
+|---|---|---|
+| `app.run(debug=True, port=5001)` | `app.run(host='0.0.0.0', port=5001)` | Without `host='0.0.0.0'` Flask listens only on 127.0.0.1 inside the container, so `-p 5001:5001` cannot reach it from the host. |
+| `requirements.txt`: `Flask==2.0.1` | `Flask==2.0.1` and `Werkzeug==2.0.3` | Flask 2.0.1 fails to start with newer Werkzeug versions, so the compatible version was pinned. |
+| `docker run -d --name mysql --net=my-bridge-net mysql:latest` | Added `-e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=devopsdb` | The MySQL image exits immediately unless a root password is set. |
+| `--net=my-bridge-net` | `--network my-bridge-net` | `--network` is the current name of the same option. |
+| `ping mysql` / `ping redis` | `iputils-ping` installed in the Flask container first | `ping` is not included in `python:3.9-slim`. |
+| `docker stop ... && docker rm ...` | Separate `docker stop` and `docker rm` commands | PowerShell 5.1 does not support `&&`. |
 
 ## Questions and Answers
 
