@@ -1,8 +1,5 @@
-
 from flask import Flask, request
-import socket
-import time
-import random
+import socket, time, random
 
 app = Flask(__name__)
 
@@ -16,6 +13,7 @@ def homepage():
 
 @app.get("/buy")
 def buy():
+    # simulate a flash sale checkout
     item = random.choice(["Smartphone", "Shoes", "Headphones", "Laptop"])
     user = request.args.get("user", f"user{random.randint(1,1000)}")
     return {
@@ -28,7 +26,4 @@ def buy():
 
 @app.get("/health")
 def health():
-    return {
-        "status": "healthy",
-        "pod": socket.gethostname()
-    }
+    return {"status": "healthy", "pod": socket.gethostname()}
