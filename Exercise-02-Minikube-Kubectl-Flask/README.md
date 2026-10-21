@@ -1,52 +1,64 @@
-# Exercise 2: Deploy a Flask Application on Kubernetes Using Minikube
+# Exercise 2: Deploy a Flask App on Minikube using kubectl and YAML
 
-## 1. Overview
+## Objective
 
-This exercise demonstrates how to containerize a Python Flask application using Docker and deploy it to a local Kubernetes cluster using Minikube. The application is exposed through a Kubernetes NodePort Service and verified using terminal commands and a web browser.
+Learn Kubernetes basics using Minikube to set up a single-node cluster and deploy Python applications. This exercise involves deploying a Flask app using Minikube.
 
-**Application response:**
+## Prerequisites
 
-```text
-Hello from Flask on Kubernetes!
-```
+- Minikube v1.39.0 installed (Docker driver)
+- kubectl
+- Docker Desktop
+- Windows 11, PowerShell
 
-## 2. Objectives
+> **Platform note:** The lab commands are written for a Linux shell. On Windows PowerShell, `eval $(minikube docker-env)` is replaced by its PowerShell equivalent, and `curl.exe` is used because `curl` in PowerShell is an alias for `Invoke-WebRequest`.
 
-- Create a simple web application using Python Flask.
-- Build a Docker image for the application.
-- Load the image into Minikube.
-- Deploy the application using a Kubernetes Deployment.
-- Expose the application using a NodePort Service.
-- Verify the deployment and test the application response.
+## Files in this Folder
 
-## 3. Technologies Used
+| File | Purpose |
+|------|---------|
+| `app.py` | Flask application |
+| `Dockerfile` | Containerizes the Flask application |
+| `flask-deployment.yaml` | Deployment and Service (final version from Step 13) |
+| `screenshots/` | Screenshots of each step |
 
-| Technology | Purpose |
-|---|---|
-| Python | Application development |
-| Flask | Web framework |
-| Docker | Containerization |
-| Kubernetes | Application orchestration |
-| Minikube | Local Kubernetes cluster |
-| kubectl | Kubernetes resource management |
+---
 
-## 4. Implementation
+## Step 1: Start Minikube
 
-### Step 1: Verify Minikube
-
-Check whether the Minikube cluster is running.
+**Command:**
 
 ```powershell
-minikube status
+minikube start --container-runtime=docker
 ```
 
-The host, kubelet, and API server should be running, with the kubeconfig configured.
+Minikube v1.39.0 uses **containerd** as the default container runtime, but `minikube docker-env` (Step 4) only works with the **Docker** runtime, so `--container-runtime=docker` was added.
 
-![Minikube status](screenshots/01-minikube-status.png)
+**Output:**
 
-### Step 2: Create the Flask Application
+```text
+😄  minikube v1.39.0 on Microsoft Windows 11 Home Single Language 26H2
+✨  Using the docker driver based on existing profile
+👍  Starting "minikube" primary control-plane node in "minikube" cluster
+🚜  Pulling base image v0.0.51 ...
+🔥  Creating docker container (CPUs=2, Memory=3900MB) ...
+🐳  Preparing Kubernetes v1.37.0 on Docker 29.7.2 ...
+🔗  Configuring bridge CNI (Container Networking Interface) ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: storage-provisioner, default-storageclass
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+```
 
-Create `app.py` with the following code:
+**Screenshot:**
+
+![Minikube start](screenshots/01-minikube-start.png)
+
+---
+
+## Step 2: Create a Flask Application
+
+**File: app.py**
 
 ```python
 from flask import Flask
@@ -61,56 +73,86 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=15000)
 ```
 
-The application defines a route at `/` that returns a text message. It listens on port `15000` on all network interfaces.
+## Step 3: Create a Dockerfile for Flask Application
 
-### Step 3: Create the Dockerfile
-
-Create a file named `Dockerfile`:
+**File: Dockerfile**
 
 ```dockerfile
-FROM python:3.12-slim
-
+FROM python:3.8-slim
 WORKDIR /app
-
-COPY app.py .
-
-RUN pip install --no-cache-dir flask
-
-EXPOSE 15000
-
+COPY . /app
+RUN pip install flask
 CMD ["python", "app.py"]
 ```
 
-The Dockerfile selects a Python base image, copies the application, installs Flask, documents port `15000`, and starts the application.
+---
 
-### Step 4: Build the Docker Image
+## Step 4: Build the Docker Image with Minikube's Docker Daemon
 
-Build the image from the Exercise 2 directory.
-
-```powershell
-docker build -t flask-app:latest .
-```
-
-The Docker image was built successfully.
-
-![Docker image build](screenshots/02-docker-build.png)
-
-### Step 5: Load the Image into Minikube
-
-Load the locally built image into Minikube and verify that it is available.
+Display the variables that configure the Docker CLI to use Minikube's Docker daemon:
 
 ```powershell
-minikube image load flask-app:latest
-minikube image ls
+minikube docker-env
 ```
 
-The image `docker.io/library/flask-app:latest` appears in the image list. Loading the image allows Kubernetes to use the local image without pulling it from a remote registry.
+**Output:**
 
-![Minikube image list](screenshots/03-minikube-image.png)
+```text
+$Env:DOCKER_TLS_VERIFY = "1"
+$Env:DOCKER_HOST = "tcp://127.0.0.1:57833"
+$Env:DOCKER_CERT_PATH = "C:\Users\Jayani Kapilesh\.minikube\certs"
+$Env:MINIKUBE_ACTIVE_DOCKERD = "minikube"
+# To point your shell to minikube's docker-daemon, run:
+# & minikube -p minikube docker-env --shell powershell | Invoke-Expression
+```
 
-### Step 6: Configure the Kubernetes Deployment and Service
+**Screenshot:**
 
-Create `flask-deployment.yaml`:
+![minikube docker-env](screenshots/02-minikube-docker-env.png)
+
+Point the shell to Minikube's Docker daemon (PowerShell equivalent of `eval $(minikube docker-env)`) and build the image:
+
+```powershell
+& minikube -p minikube docker-env --shell powershell | Invoke-Expression
+docker build -t flask-app .
+```
+
+**Output:**
+
+```text
+[+] Building 27.8s (10/10) FINISHED                                    docker:default
+ => [internal] load build definition from Dockerfile                                0.1s
+ => [internal] load metadata for docker.io/library/python:3.8-slim                  3.6s
+ => [1/4] FROM docker.io/library/python:3.8-slim@sha256:1d52838af602...             16.8s
+ => [2/4] WORKDIR /app                                                              0.2s
+ => [3/4] COPY . /app                                                               0.0s
+ => [4/4] RUN pip install flask                                                     6.5s
+ => exporting to image                                                              0.3s
+ => => writing image sha256:668f92576924e769c4e82fa04c79c9b39d86cb50363f4e9abb111d8c3981a43f
+ => => naming to docker.io/library/flask-app
+```
+
+The builder is `docker:default` (Minikube's Docker daemon), so the image is built directly inside the Minikube cluster.
+
+**Screenshot:**
+
+![Docker build](screenshots/03-docker-build.png)
+
+---
+
+## Step 5: Create a Kubernetes Deployment YAML File
+
+**Note: About `imagePullPolicy: Never`**
+
+Kubernetes has three image pull policies:
+
+1. **Always:** Kubernetes always pulls the image from the registry, even if it exists locally.
+2. **IfNotPresent:** Kubernetes pulls the image only if it doesn't exist locally.
+3. **Never:** Kubernetes never pulls the image from the registry; it only uses local images.
+
+By setting `imagePullPolicy: Never`, Kubernetes uses the local `flask-app:latest` image built in Step 4 and does not pull it from a remote registry like Docker Hub.
+
+**File: flask-deployment.yaml**
 
 ```yaml
 apiVersion: apps/v1
@@ -128,171 +170,313 @@ spec:
         app: flask-app
     spec:
       containers:
-        - name: flask-app
-          image: flask-app:latest
-          imagePullPolicy: Never
-          ports:
-            - containerPort: 15000
+      - name: flask-app
+        image: flask-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 15000
+```
+
+## Step 6: Deploy the Application
+
+```powershell
+kubectl apply -f flask-deployment.yaml
+```
+
+**Output:**
+
+```text
+deployment.apps/flask-app created
+```
+
+**Screenshot:**
+
+![kubectl apply](screenshots/04-kubectl-apply.png)
+
+## Step 7: Check Deployment Status
+
+```powershell
+kubectl get deployments
+```
+
+**Output:**
+
+```text
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+flask-app   1/1     1            1           56s
+```
+
+## Step 8: Verify Pods Created by the Deployment
+
+```powershell
+kubectl get pods -l app=flask-app
+```
+
+**Output:**
+
+```text
+NAME                         READY   STATUS    RESTARTS   AGE
+flask-app-59f7cdccb4-n8wfn   1/1     Running   0          57s
+```
+
+**Screenshot:**
+
+![Deployment and pods](screenshots/05-deployment-pods.png)
+
+## Step 9: Describe the Deployment
+
+```powershell
+kubectl describe deployment flask-app
+```
+
+**Output:**
+
+```text
+Name:                   flask-app
+Namespace:              default
+CreationTimestamp:      Thu, 22 Oct 2026 00:37:52 +0530
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=flask-app
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=flask-app
+  Containers:
+   flask-app:
+    Image:         flask-app:latest
+    Port:          15000/TCP
+    Host Port:     0/TCP
+    Environment:   <none>
+    Mounts:        <none>
+  Volumes:         <none>
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   flask-app-59f7cdccb4 (1/1 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  101s  deployment-controller  Scaled up replica set flask-app-59f7cdccb4 from 0 to 1
+```
+
+**Screenshot:**
+
+![Describe deployment](screenshots/06-describe-deployment.png)
+
+## Step 10: View Deployment Logs
+
+```powershell
+kubectl logs flask-app-59f7cdccb4-n8wfn
+```
+
+**Output:**
+
+```text
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:15000
+ * Running on http://10.244.0.3:15000
+Press CTRL+C to quit
+```
+
+The logs show that Flask is running and listening on port 15000, so the application was deployed successfully.
+
+**Screenshot:**
+
+![Pod logs](screenshots/07-pod-logs.png)
+
+## Step 11: Check Services
+
+```powershell
+kubectl get services
+```
+
+**Output:**
+
+```text
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   8m39s
+```
+
+Only the default `kubernetes` Service exists; no Service has been created for the Flask app yet.
+
+## Step 12: Try to Access the Flask Service on Port 15000
+
+```powershell
+curl.exe http://127.0.0.1:15000
+```
+
+**Output:**
+
+```text
+curl: (7) Failed to connect to 127.0.0.1:15000 after 2040 ms: Could not connect to server
+```
+
+The request fails because:
+
+1. Minikube runs in a separate (virtual) environment.
+2. The app exposes port 15000 only inside the cluster, not externally.
+
+**Screenshot:**
+
+![Services and curl failure](screenshots/08-services-curl-fail.png)
+
+---
+
+## Step 13: Update Deployment File with Service Section to Access Port 15000
+
+**Updated file: flask-deployment.yaml**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+      - name: flask-app
+        image: flask-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 15000
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: flask-app-service
 spec:
-  type: NodePort
   selector:
     app: flask-app
   ports:
-    - port: 15000
-      targetPort: 15000
+  - port: 15000
+    targetPort: 15000
+  type: NodePort
 ```
 
-The Deployment maintains one replica of the Flask application. The NodePort Service selects the application pod and forwards traffic to container port `15000`.
-
-The `imagePullPolicy: Never` setting instructs Kubernetes not to pull the image from a registry.
-
-Apply the configuration:
+**Apply the changed deployment file:**
 
 ```powershell
 kubectl apply -f flask-deployment.yaml
 ```
 
-Both the Deployment and Service were created successfully.
+**Output:**
 
-![Kubernetes resources created](screenshots/04-kubectl-apply.png)
-
-### Step 7: Verify the Deployment and Pod
-
-Check the Deployment and application pod:
-
-```powershell
-kubectl get deployments
-kubectl get pods -l app=flask-app
+```text
+deployment.apps/flask-app unchanged
+service/flask-app-service created
 ```
 
-**Observed results:**
+**Screenshot:**
 
-- Deployment readiness: `1/1`
-- Available replicas: `1`
-- Pod status: `Running`
-- Pod restarts: `0`
+![Apply service](screenshots/09-apply-service.png)
 
-![Deployment and pod status](screenshots/05-pods-deployment.png)
+**Explanation:**
 
-Inspect the Deployment details:
+- **port (Service Port):** the port exposed by the Kubernetes Service (15000).
+- **targetPort (Container Port):** the port the Flask application listens on inside the container (15000).
 
-```powershell
-kubectl describe deployment flask-app
-```
+This creates the mapping: **External Request (port 15000) → Service (port 15000) → Container (port 15000)**.
 
-The output confirms the image, container port, available replica, and successful deployment conditions.
-
-![Deployment details](screenshots/06-deployment-details.png)
-
-### Step 8: Check the Application Logs
-
-Run:
-
-```powershell
-kubectl logs deployment/flask-app
-```
-
-The logs show Flask running on port `15000`. A recorded HTTP request returned status code `200`, indicating a successful response.
-
-![Flask application logs](screenshots/07-flask-logs.png)
-
-### Step 9: Verify the Kubernetes Service
-
-List the Kubernetes Services:
-
-```powershell
-kubectl get services
-```
-
-The `flask-app-service` Service appears with type `NodePort`. The observed port mapping was `15000:30325/TCP`.
-
-![Kubernetes services](screenshots/08-kubernetes-services.png)
-
-### Step 10: Access the Application Through Minikube
-
-Run:
+### Access the Service
 
 ```powershell
 minikube service flask-app-service --url
 ```
 
-Minikube generates a local URL for accessing the Service. In this environment, the final verification used:
+**Output:**
 
 ```text
-http://127.0.0.1:53429
+http://127.0.0.1:50380
+❗  Because you are using a Docker driver on windows, the terminal needs to be open to run it.
 ```
 
-On Windows with the Docker driver, keep the terminal running the service tunnel open while accessing the URL. The port may change when the tunnel is restarted.
+1. `minikube service` interacts with Kubernetes services running in Minikube.
+2. `flask-app-service` is the name of the Service to access.
+3. `--url` prints the URL for accessing the Service instead of opening a browser.
 
-![Minikube service URL](screenshots/09-service-url.png)
+**Screenshot:**
 
-### Step 11: Test the Application Using the Terminal
+![Service URL](screenshots/10-service-url.png)
 
-In a separate PowerShell terminal, run:
+Keeping that terminal open, in a new terminal:
 
 ```powershell
-curl.exe http://127.0.0.1:53429
+curl.exe http://127.0.0.1:50380
 ```
 
-**Observed response:**
+**Output:**
 
 ```text
 Hello from Flask on Kubernetes!
 ```
 
-![Successful Flask terminal response](screenshots/10-flask-response.png)
+The Flask application is now accessible.
 
-### Step 12: Verify the Application in a Browser
+**Screenshot:**
 
-Open the active Minikube Service URL in a browser. The page displays the expected response.
+![curl success](screenshots/11-curl-success.png)
 
-![Flask application running in the browser](screenshots/11-flask-browser.png)
+The application was also opened in the browser at `http://127.0.0.1:50380`.
 
-## 5. Result
+**Screenshot:**
 
-The Flask application was successfully containerized using Docker and deployed to a local Kubernetes cluster using Minikube. The Deployment reached the ready state, the pod ran successfully, and the application was exposed through a NodePort Service.
+![Browser](screenshots/12-browser.png)
 
-The application was verified through Kubernetes commands, application logs, a terminal HTTP request, and a web browser.
-
-## 6. Conclusion
-
-This exercise demonstrates the basic workflow for deploying a containerized web application on Kubernetes. It covers Docker image creation, loading a local image into Minikube, configuring Kubernetes resources, exposing the application through a Service, and verifying application accessibility.
-
-The successful response, `Hello from Flask on Kubernetes!`, confirms that the application was deployed and accessed successfully.
+---
 
 ## Q&A Based on the Exercise
 
 **Q1: What is the purpose of `minikube service flask-app-service --url`?**
-A1: It provides the URL for accessing the `flask-app-service` running in Minikube.
+A1: To provide the URL for accessing the `flask-app-service` running in Minikube.
 
 **Q2: What happens when you run `minikube service flask-app-service --url`?**
-A2: Minikube checks that the service is running, creates a tunnel to it, and prints the URL in the terminal.
+A2: Minikube checks if the service is running, generates a URL, and displays it in the terminal.
 
-**Q3: Why is `targetPort` used in a Kubernetes Service configuration?**
-A3: It specifies the port on which the container is listening, so the Service knows where to forward traffic.
+**Q3: Why is `targetPort` used in Kubernetes Service configuration?**
+A3: To specify the port number on which the container is listening.
 
-**Q4: What is the difference between `port` and `targetPort` in a Kubernetes Service?**
-A4: `port` is the port exposed by the Service, while `targetPort` is the port of the container that receives the traffic.
+**Q4: What is the difference between `port` and `targetPort` in Kubernetes Service configuration?**
+A4: `port` is the exposed Service port, while `targetPort` is the container port.
 
 **Q5: How do you access a Flask application running in Minikube?**
-A5: Use `minikube service <service-name> --url` to get the access URL, then open it in a browser or call it with curl.
+A5: Use `minikube service <service-name> --url` to get the access URL.
 
 **Q6: Why does the terminal need to remain open when using the Docker driver with Minikube?**
-A6: With the Docker driver, Minikube runs a tunnel to reach the service, and the tunnel only works while that terminal stays open.
+A6: Because the Docker driver requires the terminal to stay open to maintain the Minikube connection (tunnel) to the service. In this exercise Minikube printed: *"Because you are using a Docker driver on windows, the terminal needs to be open to run it."*
 
 **Q7: What is the benefit of using the `--url` flag with the `minikube service` command?**
-A7: It prints the access URL directly instead of opening a browser, which makes it easy to use with curl or copy into a browser.
+A7: It provides a convenient way to access the service without manually constructing the URL.
 
 **Q8: What command is used to expose a service in Kubernetes?**
-A8: `kubectl expose` or `kubectl apply -f <service.yaml>`.
+A8: `kubectl expose` or `kubectl apply -f <service.yaml>` is used to expose a service in Kubernetes.
 
 **Q9: How does Minikube help in local Kubernetes testing?**
-A9: Minikube runs a single-node Kubernetes cluster locally, so deployments can be tested without a full Kubernetes environment.
+A9: Minikube runs a single-node Kubernetes cluster locally, making it easier to test deployments without needing a full Kubernetes environment.
 
 **Q10: What is the role of kubectl in this setup?**
-A10: kubectl is the Kubernetes command-line tool used to interact with the cluster: deploying applications, checking their status, viewing logs, scaling and managing resources.
+A10: kubectl is the Kubernetes CLI tool used to interact with the Kubernetes cluster. It allows you to deploy applications, scale them, and manage resources.
+
+---
+
+## Result
+
+A single-node Minikube cluster was started with the Docker runtime, the Flask image was built directly inside Minikube's Docker daemon, and the application was deployed with a Kubernetes Deployment. Access on port 15000 failed until a NodePort Service was added, after which `minikube service flask-app-service --url` provided a URL and the application returned **"Hello from Flask on Kubernetes!"**.
