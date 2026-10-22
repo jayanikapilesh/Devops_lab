@@ -89,7 +89,7 @@ def about():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)  # Specify the port number here
+    app.run(host='0.0.0.0', port=5001)
 ```
 
 The application provides a GET endpoint at `/about`.
@@ -268,6 +268,8 @@ The Flask container reached both `mysql` and `redis` by container name with 0% p
 
 ### Additional Connectivity Checks
 
+These checks follow Parts 17–19 of the lab's detailed steps document (`getent hosts`, `redis-cli ping` and `SHOW DATABASES`).
+
 These checks were done in an earlier run of this exercise (before the network was recreated for the ping test), so the container IP addresses are in the `172.19.0.0/16` subnet instead of `172.20.0.0/16`.
 
 #### Verify MySQL
@@ -396,14 +398,17 @@ The final network listing confirmed that `my-bridge-net` was absent while the de
 
 ## Differences from the Lab Instructions
 
-| Lab instruction | What was done | Reason |
+The Exercise 4 page links to a detailed steps document for this lab. The changes below from the Exercise 4 page all follow that document:
+
+| Exercise 4 page | What was done | Source in the detailed steps document |
 |---|---|---|
-| `app.run(debug=True, port=5001)` | `app.run(debug=True, host='0.0.0.0', port=5001)` | Without `host='0.0.0.0'` Flask listens only on 127.0.0.1 inside the container, so `-p 5001:5001` cannot reach it from the host. |
-| `requirements.txt`: `Flask==2.0.1` | `Flask==2.0.1` and `Werkzeug==2.0.3` | Flask 2.0.1 fails to start with newer Werkzeug versions, so the compatible version was pinned. |
-| `docker run -d --name mysql --net=my-bridge-net mysql:latest` | Added `-e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=devopsdb` | The MySQL image exits immediately unless a root password is set. |
-| `--net=my-bridge-net` | `--network my-bridge-net` | `--network` is the current name of the same option. |
-| `ping mysql` / `ping redis` | `iputils-ping` installed in the Flask container first | `ping` is not included in `python:3.9-slim`. |
-| `docker stop ... && docker rm ...` | Separate `docker stop` and `docker rm` commands | PowerShell 5.1 does not support `&&`. |
+| `app.run(debug=True, port=5001)` | `app.run(host='0.0.0.0', port=5001)` | Part 5: Flask must listen on all interfaces inside the container, otherwise `-p 5001:5001` cannot reach it |
+| `requirements.txt`: `Flask==2.0.1` | `Flask==2.0.1` and `Werkzeug==2.0.3` | Part 6: Flask 2.0.1 fails with newer Werkzeug releases |
+| `docker run -d --name mysql --net=my-bridge-net mysql:latest` | Added `-e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=devopsdb` | Part 10: the MySQL image exits unless a root password is set |
+| `--net=my-bridge-net` | `--network my-bridge-net` | Parts 10–13 and Q1: `--network` is the modern syntax |
+| — | `curl.exe http://localhost:5001/about` (Task 4, Step 9) | Part 15: test the Flask API from the host |
+| `ping mysql` / `ping redis` | `iputils-ping` installed in the Flask container first | Part 17: the slim Python image does not include `ping` |
+| `docker stop ... && docker rm ...` | Separate `docker stop` and `docker rm` commands | Part 25: the document runs them as separate commands |
 
 ## Questions and Answers
 
