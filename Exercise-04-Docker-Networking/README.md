@@ -89,7 +89,7 @@ def about():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5001)  # Specify the port number here
 ```
 
 The application provides a GET endpoint at `/about`.
@@ -398,7 +398,7 @@ The final network listing confirmed that `my-bridge-net` was absent while the de
 
 | Lab instruction | What was done | Reason |
 |---|---|---|
-| `app.run(debug=True, port=5001)` | `app.run(host='0.0.0.0', port=5001)` | Without `host='0.0.0.0'` Flask listens only on 127.0.0.1 inside the container, so `-p 5001:5001` cannot reach it from the host. |
+| `app.run(debug=True, port=5001)` | `app.run(debug=True, host='0.0.0.0', port=5001)` | Without `host='0.0.0.0'` Flask listens only on 127.0.0.1 inside the container, so `-p 5001:5001` cannot reach it from the host. |
 | `requirements.txt`: `Flask==2.0.1` | `Flask==2.0.1` and `Werkzeug==2.0.3` | Flask 2.0.1 fails to start with newer Werkzeug versions, so the compatible version was pinned. |
 | `docker run -d --name mysql --net=my-bridge-net mysql:latest` | Added `-e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=devopsdb` | The MySQL image exits immediately unless a root password is set. |
 | `--net=my-bridge-net` | `--network my-bridge-net` | `--network` is the current name of the same option. |

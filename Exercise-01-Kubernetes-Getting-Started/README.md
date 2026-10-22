@@ -110,11 +110,7 @@ The browser displays the default Nginx welcome page, confirming that the web ser
 
 ![Nginx welcome page](screenshots/06-nginx-browser.png)
 
-## 6. Kubernetes Configuration Files
-
-The Pod and Service configurations are maintained separately in `pod.yaml` and `service.yaml`. These files can be exported from the running resources or written as declarative Kubernetes manifests.
-
-## 7. Troubleshooting
+## 6. Troubleshooting
 
 **Issue: The Pod or Service already exists**
 
@@ -134,7 +130,7 @@ If the resources are already running correctly, there is no need to recreate the
 - Run `minikube service hello-k8s` again if necessary.
 - Keep the terminal running the Minikube service command open.
 
-## 8. Key Concepts Learned
+## 7. Key Concepts Learned
 
 - **Minikube:** Runs a local Kubernetes cluster for development and learning.
 - **Pod:** The smallest deployable unit in Kubernetes.
@@ -143,10 +139,10 @@ If the resources are already running correctly, there is no need to recreate the
 - **NodePort:** Exposes a Service through a port on the Kubernetes node.
 - **kubectl:** Command-line tool used to interact with Kubernetes.
 
-## 9. Result
+## 8. Result
 
 The Nginx application was successfully deployed as a Kubernetes Pod using Minikube. A NodePort Service was created, and the Nginx welcome page was accessed through a web browser.
 
-## 10. Conclusion
+## 9. Conclusion
 
 This experiment demonstrated the basic Kubernetes deployment workflow, including starting a local cluster, deploying a containerized application, exposing it through a Service, and verifying application accessibility.
