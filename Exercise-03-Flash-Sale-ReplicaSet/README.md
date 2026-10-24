@@ -323,6 +323,8 @@ kubectl scale rs flashsale-rs --replicas=5
 replicaset.apps/flashsale-rs scaled
 ```
 
+The lab's commands in Steps 7–11 use the name `flask-app-rs`, but `flashsale-replicaset.yaml` (Step 3) creates the ReplicaSet as `flashsale-rs`. The commands were therefore run with `flashsale-rs`; a ReplicaSet named `flask-app-rs` does not exist, so the commands as written would fail with `NotFound`.
+
 ## Step 8: Verify the updated ReplicaSet
 
 **Command:**
