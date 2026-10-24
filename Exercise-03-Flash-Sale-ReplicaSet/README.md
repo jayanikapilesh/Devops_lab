@@ -95,7 +95,37 @@ CMD ["gunicorn","-b","0.0.0.0:5000","app:app","--workers","1","--threads","2"]
 
 The lab's Dockerfile copies `ex3-flash-sale.py`, but the application is saved as `app.py` and gunicorn starts `app:app`, so `COPY app.py .` is used.
 
-The image is built directly inside Minikube's Docker daemon in Step 5. Because the ReplicaSet uses the local image name `flashsale:1.0`, the image does not need to be pushed to Docker Hub.
+### Build Docker image and push to your docker repository
+
+**Commands:**
+
+```powershell
+docker build -t jayanikapilesh345/flashsale:1.0 .
+docker push jayanikapilesh345/flashsale:1.0
+```
+
+**Output (push):**
+
+```text
+The push refers to repository [docker.io/jayanikapilesh345/flashsale]
+b0aec4a98ced: Pushed
+84bf25710877: Pushed
+73684cef6646: Pushed
+6d9af71a343e: Pushed
+732784e95895: Pushed
+c87312dee3bf: Pushed
+f2be67225471: Pushed
+90d47cf54851: Pushed
+1.0: digest: sha256:fd75b984883d33420ca6f0d6f5e73fc408c7ff0e24bef83eb6e241da01477783 size: 856
+```
+
+**Screenshot:**
+
+![Docker push](screenshots/09-docker-push.png)
+
+![Image on Docker Hub](screenshots/10-docker-hub-repo.png)
+
+The ReplicaSet in Step 3 uses the local image name `flashsale:1.0`, which is built inside Minikube's Docker daemon in Step 5, so Kubernetes uses that local image and does not pull from Docker Hub.
 
 ---
 
