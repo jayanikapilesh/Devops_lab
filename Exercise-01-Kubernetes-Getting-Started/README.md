@@ -110,6 +110,20 @@ The browser displays the default Nginx welcome page, confirming that the web ser
 
 ![Nginx welcome page](screenshots/06-nginx-browser.png)
 
+### System Internal Details
+
+What happens inside Kubernetes when `kubectl run hello-k8s --image=nginx --port=80` is executed:
+
+1. **kubectl → kube-apiserver:** kubectl sends a Pod manifest (name `hello-k8s`, image `nginx`, port `80`) to the API server through its REST API.
+2. **kube-apiserver → etcd:** the API server validates the request and stores the desired state in etcd: *there should be a Pod called `hello-k8s` running an nginx container on port 80*.
+3. **kube-scheduler:** watches for new Pods that have no node assigned and chooses a worker node with enough CPU and memory.
+4. **Scheduler → kubelet:** the Pod is bound to the chosen node, and the kubelet (the agent on that node) is told to run it.
+5. **kubelet → container runtime:** the runtime pulls the `nginx` image from Docker Hub, creates the container, sets up its filesystem and runs it in isolated Linux namespaces.
+6. **CNI (networking):** assigns the Pod a unique IP address that is reachable inside the cluster.
+7. **kubelet → kube-apiserver:** the kubelet reports back that Pod `hello-k8s` is running, which is the status shown by `kubectl get pods`.
+
+`kubectl expose` then creates a NodePort Service, and kube-proxy on the node routes traffic from the NodePort to the Pod.
+
 ## 6. Troubleshooting
 
 **Issue: The Pod or Service already exists**
