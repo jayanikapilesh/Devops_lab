@@ -646,7 +646,7 @@ The script now prints pending deliveries between 50 and 100.
 | Expected Output | Result |
 |-----------------|--------|
 | **Metrics Endpoint:** http://localhost:8000/metrics | ✅ `total_deliveries`, `pending_deliveries`, `on_the_way_deliveries`, `average_delivery_time` exposed |
-| **Prometheus Query:** graphs for the delivery metrics | ✅ `pending_deliveries` graph below |
+| **Prometheus Query:** graphs for `total_deliveries`, `pending_deliveries` and `average_delivery_time` | ✅ All three graphs below |
 | **Grafana Dashboard:** visualizations for delivery metrics and trends | ✅ Delivery Monitoring dashboard with 4 panels |
 | **Jenkins Logs:** successful pipeline build with logs for Docker commands | ✅ Build #1 `Finished: SUCCESS` |
 | **Prometheus Alerts:** critical alerts for high pending deliveries | ✅ HighPendingDeliveries and HighAverageDeliveryTime FIRING |
@@ -654,3 +654,15 @@ The script now prints pending deliveries between 50 and 100.
 **Prometheus Query graph (`pending_deliveries`, last 1 hour):** values stay between 10 and 20, then rise to 55–83 after Step 6. (Times are shown in UTC.)
 
 ![Prometheus query graph](screenshots/16-prometheus-query-graph.png)
+
+**Prometheus Query graph (`total_deliveries`, last 5 minutes):** values move between about 108 and 153. This graph was taken with the Step 6 version of the script (`pending_deliveries` between 50 and 100), so the totals are higher than in Step 1. (Times are shown in UTC.)
+
+**Screenshot:**
+
+![Prometheus total deliveries graph](screenshots/16b-prometheus-total-deliveries.png)
+
+**Prometheus Query graph (`average_delivery_time`, last 5 minutes):** `average_delivery_time` is a Summary metric, so the average is queried as `average_delivery_time_sum / average_delivery_time_count` (the same expression used in the `HighAverageDeliveryTime` alert rule). The value stays between about 30.0 and 30.2 seconds, a running average of delivery times simulated between 15 and 45 seconds. (Times are shown in UTC.)
+
+**Screenshot:**
+
+![Prometheus average delivery time graph](screenshots/16c-prometheus-average-delivery-time.png)
