@@ -351,6 +351,22 @@ The Jenkins image is based on **Debian 13 (trixie)**, which provides **Python 3.
 | `python3.11-venv` | `python3-venv` | Image ships Python 3.13, not 3.11; `python3-venv` installed `python3.13-venv` |
 | `python3-flask` | `python3-flask` | Same (Flask 3.1.1) |
 
+The lab's package names were also tested in a temporary container from the same image:
+
+```text
+root@9ce6ee6c7572:/# apt install pip
+Note, selecting 'python3-pip' instead of 'pip'
+...
+Continue? [Y/n] n
+Abort.
+root@9ce6ee6c7572:/# apt install python3.11-venv
+Error: Unable to locate package python3.11-venv
+```
+
+`pip` resolves to `python3-pip`, and `python3.11-venv` does not exist on this Python 3.13 image, so `python3-venv` was used.
+
+![Lab package names tested](screenshots/11-lab-packages-not-found.png)
+
 **Verification inside the container:**
 
 ```bash
