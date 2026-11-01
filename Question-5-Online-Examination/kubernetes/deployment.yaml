@@ -1,0 +1,27 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: examination-deployment
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: examination
+
+  template:
+    metadata:
+      labels:
+        app: examination
+
+    spec:
+      containers:
+        - name: examination-container
+          image: examination-app:v2
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 15000
