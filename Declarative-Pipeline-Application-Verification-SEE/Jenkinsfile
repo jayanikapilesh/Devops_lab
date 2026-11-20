@@ -1,0 +1,93 @@
+
+pipeline {
+    agent any
+
+    environment {
+        DEPLOY_DIR = "${WORKSPACE}/deployment"
+        APP_PORT = '5000'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh '''
+                    python3 -m venv .venv
+                    .venv/bin/python -m pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh '.venv/bin/python -m pytest -v test_app.py'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    mkdir -p "$DEPLOY_DIR"
+                    cp app.py requirements.txt "$DEPLOY_DIR/"
+                '''
+            }
+        }
+
+        stage('Run Application') {
+            steps {
+                sh '''
+                    if [ -f "$DEPLOY_DIR/app.pid" ]; then
+                        kill $(cat "$DEPLOY_DIR/app.pid") 2>/dev/null || true
+                    fi
+
+                    cd "$DEPLOY_DIR"
+                    JENKINS_NODE_COOKIE=dontKillMe \
+                    nohup "$WORKSPACE/.venv/bin/python" app.py \
+                        > app.log 2>&1 < /dev/null &
+                    echo $! > app.pid
+                '''
+            }
+        }
+
+        stage('Test Application') {
+            steps {
+                sh '''
+                    .venv/bin/python - <<'PY'
+import json
+import time
+import urllib.request
+
+url = "http://127.0.0.1:5000/"
+expected = {
+    "message": "Welcome to the Flask CI/CD Application",
+    "status": "success"
+}
+
+for attempt in range(10):
+    try:
+        with urllib.request.urlopen(url, timeout=3) as response:
+            assert response.status == 200
+            assert json.load(response) == expected
+        print("Post-deployment verification PASSED")
+        break
+    except Exception:
+        if attempt == 9:
+            raise
+        time.sleep(1)
+PY
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'SUCCESS: All five pipeline stages passed!'
+        }
+        failure {
+            echo 'FAILURE: Pipeline failed. Check console output.'
+        }
+        always {
+            echo 'Pipeline execution completed.'
+        }
+    }
+}
