@@ -12,7 +12,7 @@ def client():
 
 def test_home_status_code(client):
     response = client.get("/")
-    assert response.status_code == 404
+    assert response.status_code == 200
 
 
 def test_home_response_body(client):
